@@ -1,106 +1,316 @@
 import os
 import glob
-import win32com.client
+import re
+import win32com.client as win32
+from win32com.client import constants
 from docx import Document
+from lxml import etree
 
-report_dir = r'E:\Temp\个体报告批量导出'
+report_dir = r'D:\Temp\Report\个体报告批量导出'
+template_file = r'D:\Temp\Report\template.docx'
+output_dir = r'D:\Temp\Report\output'
 
-
-def change_file_extension(file_path):
-    # 检查文件是否存在
-    if not os.path.isfile(file_path):
-        print(f"文件不存在: {file_path}")
-        return None
-
-    # 获取文件的目录路径和文件名
-    directory, filename = os.path.split(file_path)
-
-    # 分离文件名和后缀名
-    name, extension = os.path.splitext(filename)
-
-    # 检查文件后缀是否为 .doc
-    if extension.lower() != ".doc":
-        print(f"文件后缀不是 .doc: {file_path}")
-        return None
-
-    # 构建新的文件路径
-    new_filename = name + ".docx"
-    new_file_path = os.path.join(directory, new_filename)
-
-    return new_file_path
+crxl = r'成人心理压力量表'
+askrg = r'艾森克人格测验'
+jlzp = r'焦虑自评量表'
+zzzp = r'症状自评量表'
+zwhx = r'自我和谐量表'
 
 
-def convert_doc_to_docx(doc_path, docx_path):
-    # 创建 Word 应用程序对象
-    word = win32com.client.Dispatch("Word.Application")
-
-    try:
-        # 打开 .doc 文件
-        doc = word.Documents.Open(doc_path)
-
-        # 将文件另存为 .docx 格式
-        doc.SaveAs(docx_path, FileFormat=16)  # FileFormat=16 表示 .docx 格式
-
-        print(f"转换完成: {doc_path} -> {docx_path}")
-    except Exception as e:
-        print(f"转换失败: {doc_path}")
-        print(f"错误信息: {str(e)}")
-    finally:
-        # 关闭文档和 Word 应用程序
-        doc.Close()
-        word.Quit()
+def extract_info(text):
+    # 使用 split 方法按冒号分割字符串，并取第二部分
+    name = text.split("：")[1] if "：" in text else ""
+    # 输出提取的姓名
+    return name
 
 
-def read_docx(path):
+def dispose_askrg(doc, template):
+    # 遍历文档中的所有表格
+    for table in doc.tables:
+        # 检查表格的第一行是否包含目标表头
+        if '维度' in table.rows[0].cells[0].text:
+            # 找到目标表格，可以进行操作
+            # 定义正则表达式模式，匹配 "分" 后插入冒号
+            pattern = r"分(?!：)"  # 这确保我们不会重复插入冒号
+            # 使用 re.sub 进行替换，只替换第一个匹配
+            raw = re.sub(pattern, "分：", table.rows[1].cells[0].text, count=1)
+            standard = re.sub(pattern, "分：", table.rows[1].cells[1].text, count=1)
+            result = table.rows[2].cells[0].text
+            suggest = table.rows[3].cells[0].text
+            # 操作：修改表格的内容
+            for t in template.tables:
+                print(t.rows[0].cells[0].text)
+                if askrg in t.rows[0].cells[0].text:
+                    if '维度一' in table.rows[0].cells[0].text:
+                        t.rows[2].cells[0].text = raw
+                        t.rows[2].cells[1].text = standard
+                        t.rows[3].cells[0].text = result
+                        t.rows[4].cells[0].text = suggest
+                        print(t.rows[2].cells[0].text)
+                        print(t.rows[2].cells[1].text)
+                        print(t.rows[3].cells[0].text)
+                        print(t.rows[4].cells[0].text)
+                    if '维度二' in table.rows[0].cells[0].text:
+                        t.rows[6].cells[0].text = raw
+                        t.rows[6].cells[1].text = standard
+                        t.rows[7].cells[0].text = result
+                        t.rows[8].cells[0].text = suggest
+                        print(t.rows[6].cells[0].text)
+                        print(t.rows[6].cells[1].text)
+                        print(t.rows[7].cells[0].text)
+                        print(t.rows[8].cells[0].text)
+                    if '维度三' in table.rows[0].cells[0].text:
+                        t.rows[10].cells[0].text = raw
+                        t.rows[10].cells[1].text = standard
+                        t.rows[11].cells[0].text = result
+                        t.rows[12].cells[0].text = suggest
+                        print(t.rows[10].cells[0].text)
+                        print(t.rows[10].cells[1].text)
+                        print(t.rows[11].cells[0].text)
+                        print(t.rows[12].cells[0].text)
+                    if '维度四' in table.rows[0].cells[0].text:
+                        t.rows[14].cells[0].text = raw
+                        t.rows[14].cells[1].text = standard
+                        t.rows[15].cells[0].text = result
+                        t.rows[16].cells[0].text = suggest
+                        print(t.rows[14].cells[0].text)
+                        print(t.rows[14].cells[1].text)
+                        print(t.rows[15].cells[0].text)
+                        print(t.rows[16].cells[0].text)
+    return
+
+
+def dispose_crxl(doc, template):
+    name = ''
+    gender = ''
+    birthday = ''
+    # 遍历文档中的所有表格
+    for table in doc.tables:
+        if '登录名' in table.rows[0].cells[0].text:
+            name = extract_info(table.rows[0].cells[1].text)
+            gender = extract_info(table.rows[0].cells[2].text)
+            birthday = extract_info(table.rows[1].cells[0].text)
+        # 检查表格的第一行是否包含目标表头
+        if '总评' in table.rows[0].cells[0].text:
+            # 找到目标表格，可以进行操作
+            # 定义正则表达式模式，匹配 "分" 后插入冒号
+            pattern = r"分(?!：)"  # 这确保我们不会重复插入冒号
+            # 使用 re.sub 进行替换，只替换第一个匹配
+            raw = re.sub(pattern, "分：", table.rows[1].cells[0].text, count=1)
+            standard = re.sub(pattern, "分：", table.rows[1].cells[1].text, count=1)
+            result = table.rows[2].cells[0].text
+            suggest = table.rows[3].cells[0].text
+            # 操作：修改表格的内容
+            for t in template.tables:
+                print(t.rows[0].cells[0].text)
+                if '姓名' in t.rows[0].cells[0].text:
+                    t.rows[0].cells[1].text = name
+                    t.rows[0].cells[3].text = gender
+                    t.rows[1].cells[1].text = birthday
+                if crxl in t.rows[0].cells[0].text:
+                    t.rows[1].cells[0].text = raw
+                    t.rows[1].cells[1].text = standard
+                    t.rows[2].cells[0].text = result
+                    t.rows[3].cells[0].text = suggest
+                    print(t.rows[1].cells[0].text)
+                    print(t.rows[1].cells[1].text)
+                    print(t.rows[2].cells[0].text)
+                    print(t.rows[3].cells[0].text)
+    return name, birthday
+
+
+def dispose_jlzp(doc, template):
+    # 遍历文档中的所有表格
+    for table in doc.tables:
+        # 检查表格的第一行是否包含目标表头
+        if '总评' in table.rows[0].cells[0].text:
+            # 找到目标表格，可以进行操作
+            # 定义正则表达式模式，匹配 "分" 后插入冒号
+            pattern = r"分(?!：)"  # 这确保我们不会重复插入冒号
+            # 使用 re.sub 进行替换，只替换第一个匹配
+            raw = re.sub(pattern, "分：", table.rows[1].cells[0].text, count=1)
+            standard = re.sub(pattern, "分：", table.rows[1].cells[1].text, count=1)
+            result = table.rows[2].cells[0].text
+            suggest = table.rows[3].cells[0].text
+            # 操作：修改表格的内容
+            for t in template.tables:
+                print(t.rows[0].cells[0].text)
+                if jlzp in t.rows[0].cells[0].text:
+                    t.rows[1].cells[0].text = raw
+                    t.rows[1].cells[1].text = standard
+                    t.rows[2].cells[0].text = result
+                    t.rows[3].cells[0].text = suggest
+                    print(t.rows[1].cells[0].text)
+                    print(t.rows[1].cells[1].text)
+                    print(t.rows[2].cells[0].text)
+                    print(t.rows[3].cells[0].text)
+                    break  # 找到目标表格后退出循环
+            break
+    return
+
+
+def dispose_zzzp(doc, template):
+    # 遍历文档中的所有表格
+    for table in doc.tables:
+        # 检查表格的第一行是否包含目标表头
+        print(table.rows[0].cells[0].text)
+        if '维度一' in table.rows[0].cells[0].text:
+            # 找到目标表格，可以进行操作
+            # 定义正则表达式模式，匹配 "分" 后插入冒号
+            pattern = r"分(?!：)"  # 这确保我们不会重复插入冒号
+            # 使用 re.sub 进行替换，只替换第一个匹配
+            raw = re.sub(pattern, "分：", table.rows[1].cells[0].text, count=1)
+            standard = re.sub(pattern, "分：", table.rows[1].cells[1].text, count=1)
+            result = table.rows[2].cells[0].text
+            suggest = table.rows[3].cells[0].text
+            # 操作：修改表格的内容
+            for t in template.tables:
+                print(t.rows[0].cells[0].text)
+                if zzzp in t.rows[0].cells[0].text:
+                    t.rows[1].cells[0].text = raw
+                    t.rows[1].cells[1].text = standard
+                    t.rows[2].cells[0].text = result
+                    t.rows[3].cells[0].text = suggest
+                    print(t.rows[1].cells[0].text)
+                    print(t.rows[1].cells[1].text)
+                    print(t.rows[2].cells[0].text)
+                    print(t.rows[3].cells[0].text)
+                    break  # 找到目标表格后退出循环
+            break
+    return
+
+
+def dispose_zwhx(doc, template):
+    # 遍历文档中的所有表格
+    for table in doc.tables:
+        # 检查表格的第一行是否包含目标表头
+        print(table.rows[0].cells[0].text)
+        if '总评' in table.rows[0].cells[0].text:
+            # 找到目标表格，可以进行操作
+            # 定义正则表达式模式，匹配 "分" 后插入冒号
+            pattern = r"分(?!：)"  # 这确保我们不会重复插入冒号
+            # 使用 re.sub 进行替换，只替换第一个匹配
+            raw = re.sub(pattern, "分：", table.rows[1].cells[0].text, count=1)
+            standard = re.sub(pattern, "分：", table.rows[1].cells[1].text, count=1)
+            result = table.rows[2].cells[0].text
+            suggest = table.rows[3].cells[0].text
+            # 操作：修改表格的内容
+            for t in template.tables:
+                print(t.rows[0].cells[0].text)
+                if zwhx in t.rows[0].cells[0].text:
+                    t.rows[1].cells[0].text = raw
+                    t.rows[1].cells[1].text = standard
+                    t.rows[2].cells[0].text = result
+                    t.rows[3].cells[0].text = suggest
+                    print(t.rows[1].cells[0].text)
+                    print(t.rows[1].cells[1].text)
+                    print(t.rows[2].cells[0].text)
+                    print(t.rows[3].cells[0].text)
+                    break  # 找到目标表格后退出循环
+            break
+    return
+
+
+def get_textbox_text(doc, new_text='张三', old_text='{{name}}'):
+    # 解析文档的 XML 内容
+    namespaces = {'w': 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'}
+    docx_xml = doc.element.xml
+    tree = etree.fromstring(docx_xml)
+
+    # 查找所有文本框内容
+    for textbox in tree.xpath('.//w:txbxContent', namespaces=namespaces):
+        for elem in textbox.iter():
+            print(elem.text)
+            if elem.text and old_text in elem.text:
+
+                elem.text = elem.text.replace(old_text, new_text)
+
+    # 将修改后的 XML 写回文档
+    # doc.element.clear()
+    # doc.element.append(etree.fromstring(etree.tostring(tree)))
+    # doc.element.append(tree)
+
+    # 查找所有文本框内容
+    # textbox_texts = []
+    # for textbox in tree.xpath('.//w:txbxContent', namespaces=namespaces):
+    #     print(textbox)
+    #     text = ''.join(textbox.itertext())
+    #     if '姓名' in text:
+    #         textbox_texts.append(text.strip())
+
+    # return textbox_texts
+
+
+def read_docx(path, template_doc):
     # 打开 Word 文档
     doc = Document(path)
 
-    # 指定要匹配的表头
-    target_header = '纬度一：总评'
+    file_name = ''
+    # get_textbox_text(doc)
+    # 遍历文档中的所有段落
+    # for para in template_doc.paragraphs:
+    #     # 遍历段落中的所有形状
+    #     print(para)
+    #     for run in para.runs:
+    #         # 检查形状是否为文本框
+    #         print(run)
+    if re.search(crxl, path):
+        print(f"开始处理: {path}")
+        name, birthday = dispose_crxl(doc, template_doc)
+        file_name = f'{name}-{birthday}.docx'
+        # get_textbox_text(template_doc, name)
+    if re.search(askrg, path):
+        print(f"开始处理: {path}")
+        dispose_askrg(doc, template_doc)
+    if re.search(jlzp, path):
+        print(f"开始处理: {path}")
+        dispose_jlzp(doc, template_doc)
+    if re.search(zzzp, path):
+        print(f"开始处理: {path}")
+        dispose_zzzp(doc, template_doc)
+    if re.search(zwhx, path):
+        print(f"开始处理: {path}")
+        dispose_zwhx(doc, template_doc)
+    return file_name
 
-    # 遍历文档中的所有表格
-    for table in doc.tables:
-        print(table)
-        # 检查表格的第一行是否包含目标表头
-        if target_header in table.rows[0].cells[0].text:
-            # 找到目标表格，可以进行操作
-            print(f"找到目标表格：{target_header}")
-
-            # 示例操作：打印表格的行数和列数
-            print(f"表格行数：{len(table.rows)}")
-            print(f"表格列数：{len(table.columns)}")
-
-            # 示例操作：遍历表格的每个单元格并打印其内容
-            for row in table.rows:
-                for cell in row.cells:
-                    print(cell.text)
-
-            # 示例操作：修改表格的内容
-            # table.rows[1].cells[0].text = "新的内容"
-
-            break  # 找到目标表格后退出循环
-
-    # 保存修改后的文档
-    # doc.save('example_modified.docx')
-
+def change_textbox(file_path):
+    doc_app = win32.gencache.EnsureDispatch('Word.Application')  # 打开word应用程序
+    doc_app.Visible = False  # 设置应用程序可见
+    doc = doc_app.Documents.Open(file_path)
+    # 获取文件名部分
+    file_name = os.path.basename(file_path)
+    # 查找第一个"-"字符的位置
+    dash_index = file_name.find("-")
+    name = ''
+    if dash_index != -1:
+        # 提取"-"之前的文字作为人名
+        name = file_name[:dash_index]
+        print("提取的人名:", name)
+    else:
+        print("文件名中没有找到'-'字符")
+    for shape in doc.Shapes:
+        if shape.Type == 17 and shape.TextFrame.HasText:
+            if '{{name}}' in shape.TextFrame.TextRange.Text:
+                shape.TextFrame.TextRange.Text = shape.TextFrame.TextRange.Text.replace('{{name}}', name)
+    doc.Save()
+    doc.Close()
+    doc_app.Quit()
 
 def exec_script():
-    # convert_doc_to_docx(report_dir, report_dir)
-    # 使用 glob 模块获取当前文件夹下所有 .doc 文件
-    # doc_files = glob.glob(os.path.join(report_dir, "*.doc"))
-    # print(doc_files)
-    # print("当前文件夹下的 .doc 文件:")
-    # for file in doc_files:
-    #     print(file)
-    #     out_path = change_file_extension(file)
-    #     convert_doc_to_docx(file, out_path)
-
+    output_path = ''
     docx_files = glob.glob(os.path.join(report_dir, "*.docx"))
+    template_doc = Document(template_file)
     for file in docx_files:
         print(file)
-        read_docx(file)
+        file_name = read_docx(file, template_doc)
+        if file_name != '':
+            output_path = os.path.join(output_dir, file_name)
 
-    return 1
+    # file_name = f'{name}-{birthday}.docx'
+    # output_path = os.path.join(output_dir, file_name)
+    template_doc.save(output_path)
+    change_textbox(output_path)
+    return
 
 
 if __name__ == '__main__':

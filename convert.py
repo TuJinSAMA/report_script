@@ -29,16 +29,15 @@ def change_file_extension(file_path):
     return new_file_path
 
 
-def convert_doc_to_docx(doc_path, docx_path):
-    # 创建 Word 应用程序对象
-    word = win32com.client.Dispatch("Word.Application")
+def convert_doc_to_docx(word, doc_path, docx_path):
+
 
     try:
         # 打开 .doc 文件
         doc = word.Documents.Open(doc_path)
 
         # 将文件另存为 .docx 格式
-        doc.SaveAs(docx_path, FileFormat=16)  # FileFormat=16 表示 .docx 格式
+        doc.SaveAs(docx_path, FileFormat=12)  # FileFormat=16 表示 .docx 格式
 
         print(f"转换完成: {doc_path} -> {docx_path}")
     except Exception as e:
@@ -47,22 +46,31 @@ def convert_doc_to_docx(doc_path, docx_path):
     finally:
         # 关闭文档和 Word 应用程序
         doc.Close()
-        word.Quit()
 
 
-def exec_script():
+
+def exec_script(path):
     # convert_doc_to_docx(report_dir, report_dir)
     # 使用 glob 模块获取当前文件夹下所有 .doc 文件
-    doc_files = glob.glob(os.path.join(report_dir, "*.doc"))
+    doc_files = glob.glob(os.path.join(path, "*.doc"))
     print(doc_files)
     print("当前文件夹下的 .doc 文件:")
+    # 创建 Word 应用程序对象
+    word = win32com.client.Dispatch("Word.Application")
     for file in doc_files:
         print(file)
         out_path = change_file_extension(file)
-        convert_doc_to_docx(file, out_path)
-
+        convert_doc_to_docx(word, file, out_path)
+    word.Quit()
     return 1
 
 
 if __name__ == '__main__':
-    exec_script()
+    # exec_script()
+    for dir_name in os.listdir(report_dir):
+        # 获取完整的文件夹路径
+        dir_path = os.path.join(report_dir, dir_name)
+        # 检查是否为文件夹
+        if os.path.isdir(dir_path):
+            print(f"找到文件夹: {dir_name}")
+            exec_script(dir_path)

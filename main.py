@@ -6,9 +6,14 @@ from win32com.client import constants
 from docx import Document
 from lxml import etree
 
-report_dir = r'D:\Temp\Report\个体报告批量导出'
-template_file = r'D:\Temp\Report\template.docx'
-output_dir = r'D:\Temp\Report\output'
+# report_dir = r'D:\Temp\Report\个体报告批量导出'
+# template_file = r'D:\Temp\Report\template.docx'
+# output_dir = r'D:\Temp\Report\output'
+
+# report_dir = r'E:\Temp\个体报告批量导出'
+report_dir = r'E:\Temp\5月15日第一批11人'
+template_file = r'E:\Temp\template.docx'
+output_dir = r'E:\Temp\output'
 
 crxl = r'成人心理压力量表'
 askrg = r'艾森克人格测验'
@@ -102,11 +107,34 @@ def dispose_crxl(doc, template):
             suggest = table.rows[3].cells[0].text
             # 操作：修改表格的内容
             for t in template.tables:
-                print(t.rows[0].cells[0].text)
                 if '姓名' in t.rows[0].cells[0].text:
-                    t.rows[0].cells[1].text = name
-                    t.rows[0].cells[3].text = gender
-                    t.rows[1].cells[1].text = birthday
+                    cell_list = [
+                        {
+                            'cell': t.rows[0].cells[1],
+                            'value': name
+                        },
+                        {
+                            'cell': t.rows[0].cells[3],
+                            'value': gender
+                        },
+                        {
+                            'cell': t.rows[1].cells[1],
+                            'value': birthday
+                        },
+                    ]
+                    for item in cell_list:
+                        # 检查单元格中是否有段落
+                        if len(item['cell'].paragraphs) > 0:
+                            # 获取第一个段落
+                            paragraph = item['cell'].paragraphs[0]
+                            # 清空段落中的所有文本块
+                            for run in paragraph.runs:
+                                run.text = ''
+                            # 添加新的文本块，并设置文本内容
+                            paragraph.add_run(item['value'])
+
+                    # t.rows[0].cells[3].text = gender
+                    # t.rows[1].cells[1].text = birthday
                 if crxl in t.rows[0].cells[0].text:
                     t.rows[1].cells[0].text = raw
                     t.rows[1].cells[1].text = standard
@@ -211,54 +239,15 @@ def dispose_zwhx(doc, template):
     return
 
 
-def get_textbox_text(doc, new_text='张三', old_text='{{name}}'):
-    # 解析文档的 XML 内容
-    namespaces = {'w': 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'}
-    docx_xml = doc.element.xml
-    tree = etree.fromstring(docx_xml)
-
-    # 查找所有文本框内容
-    for textbox in tree.xpath('.//w:txbxContent', namespaces=namespaces):
-        for elem in textbox.iter():
-            print(elem.text)
-            if elem.text and old_text in elem.text:
-
-                elem.text = elem.text.replace(old_text, new_text)
-
-    # 将修改后的 XML 写回文档
-    # doc.element.clear()
-    # doc.element.append(etree.fromstring(etree.tostring(tree)))
-    # doc.element.append(tree)
-
-    # 查找所有文本框内容
-    # textbox_texts = []
-    # for textbox in tree.xpath('.//w:txbxContent', namespaces=namespaces):
-    #     print(textbox)
-    #     text = ''.join(textbox.itertext())
-    #     if '姓名' in text:
-    #         textbox_texts.append(text.strip())
-
-    # return textbox_texts
-
-
 def read_docx(path, template_doc):
     # 打开 Word 文档
     doc = Document(path)
 
     file_name = ''
-    # get_textbox_text(doc)
-    # 遍历文档中的所有段落
-    # for para in template_doc.paragraphs:
-    #     # 遍历段落中的所有形状
-    #     print(para)
-    #     for run in para.runs:
-    #         # 检查形状是否为文本框
-    #         print(run)
     if re.search(crxl, path):
         print(f"开始处理: {path}")
         name, birthday = dispose_crxl(doc, template_doc)
         file_name = f'{name}-{birthday}.docx'
-        # get_textbox_text(template_doc, name)
     if re.search(askrg, path):
         print(f"开始处理: {path}")
         dispose_askrg(doc, template_doc)
@@ -272,6 +261,7 @@ def read_docx(path, template_doc):
         print(f"开始处理: {path}")
         dispose_zwhx(doc, template_doc)
     return file_name
+
 
 def change_textbox(file_path):
     doc_app = win32.gencache.EnsureDispatch('Word.Application')  # 打开word应用程序
@@ -296,22 +286,27 @@ def change_textbox(file_path):
     doc.Close()
     doc_app.Quit()
 
-def exec_script():
+
+def exec_script(path):
     output_path = ''
-    docx_files = glob.glob(os.path.join(report_dir, "*.docx"))
+    docx_files = glob.glob(os.path.join(path, "*.docx"))
     template_doc = Document(template_file)
     for file in docx_files:
         print(file)
         file_name = read_docx(file, template_doc)
         if file_name != '':
             output_path = os.path.join(output_dir, file_name)
-
-    # file_name = f'{name}-{birthday}.docx'
-    # output_path = os.path.join(output_dir, file_name)
     template_doc.save(output_path)
     change_textbox(output_path)
     return
 
 
 if __name__ == '__main__':
-    exec_script()
+    # exec_script()
+    for dir_name in os.listdir(report_dir):
+        # 获取完整的文件夹路径
+        dir_path = os.path.join(report_dir, dir_name)
+        # 检查是否为文件夹
+        if os.path.isdir(dir_path):
+            print(f"找到文件夹: {dir_name}")
+            exec_script(dir_path)

@@ -11,9 +11,9 @@ from lxml import etree
 # output_dir = r'D:\Temp\Report\output'
 
 # report_dir = r'E:\Temp\个体报告批量导出'
-report_dir = r'E:\Temp\5月15日第一批11人'
+report_dir = r'E:\Temp\0705'
 template_file = r'E:\Temp\template.docx'
-output_dir = r'E:\Temp\output'
+output_dir = r'E:\Temp\output-0705'
 
 crxl = r'成人心理压力量表'
 askrg = r'艾森克人格测验'

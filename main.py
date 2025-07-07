@@ -11,9 +11,9 @@ from lxml import etree
 # output_dir = r'D:\Temp\Report\output'
 
 # report_dir = r'E:\Temp\个体报告批量导出'
-report_dir = r'E:\Temp\0705'
-template_file = r'E:\Temp\template.docx'
-output_dir = r'E:\Temp\output-0705'
+report_dir = r'E:\Temp\2025-0706'
+template_file = r'E:\Temp\template2.docx'
+output_dir = r'E:\Temp\output-2025-0706'
 
 crxl = r'成人心理压力量表'
 askrg = r'艾森克人格测验'
@@ -89,12 +89,14 @@ def dispose_crxl(doc, template):
     name = ''
     gender = ''
     birthday = ''
+    completed_date = ''
     # 遍历文档中的所有表格
     for table in doc.tables:
         if '登录名' in table.rows[0].cells[0].text:
             name = extract_info(table.rows[0].cells[1].text)
             gender = extract_info(table.rows[0].cells[2].text)
             birthday = extract_info(table.rows[1].cells[0].text)
+            completed_date = extract_info(table.rows[1].cells[1].text)
         # 检查表格的第一行是否包含目标表头
         if '总评' in table.rows[0].cells[0].text:
             # 找到目标表格，可以进行操作
@@ -120,6 +122,10 @@ def dispose_crxl(doc, template):
                         {
                             'cell': t.rows[1].cells[1],
                             'value': birthday
+                        },
+                        {
+                            'cell': t.rows[1].cells[3],
+                            'value': completed_date
                         },
                     ]
                     for item in cell_list:
@@ -190,6 +196,9 @@ def dispose_zzzp(doc, template):
             raw = re.sub(pattern, "分：", table.rows[1].cells[0].text, count=1)
             standard = re.sub(pattern, "分：", table.rows[1].cells[1].text, count=1)
             result = table.rows[2].cells[0].text
+            result = result.split('\n')
+            result = result[0] + '\n' + result[2]
+            # result = table.rows[2].cells[0].text
             suggest = table.rows[3].cells[0].text
             # 操作：修改表格的内容
             for t in template.tables:

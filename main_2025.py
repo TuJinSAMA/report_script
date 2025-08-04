@@ -12,14 +12,14 @@ from lxml import etree
 
 # report_dir = r'E:\Temp\个体报告批量导出'
 report_dir = r'E:\Temp\2025-07-16'
-template_file = r'E:\Temp\template2.docx'
+template_file = r'E:\Temp\template33.docx'
 output_dir = r'E:\Temp\output-0716'
 
 crxl = r'成人心理压力量表'
 askrg = r'艾森克人格测验'
 jlzp = r'焦虑自评量表'
 zzzp = r'症状自评量表'
-zwhx = r'自我和谐量表'
+shzc = r'社会支持评定量表'
 
 
 def extract_info(text):
@@ -234,7 +234,7 @@ def dispose_zwhx(doc, template):
             # 操作：修改表格的内容
             for t in template.tables:
                 print(t.rows[0].cells[0].text)
-                if zwhx in t.rows[0].cells[0].text:
+                if shzc in t.rows[0].cells[0].text:
                     t.rows[1].cells[0].text = raw
                     t.rows[1].cells[1].text = standard
                     t.rows[2].cells[0].text = result
@@ -266,7 +266,7 @@ def read_docx(path, template_doc):
     if re.search(zzzp, path):
         print(f"开始处理: {path}")
         dispose_zzzp(doc, template_doc)
-    if re.search(zwhx, path):
+    if re.search(shzc, path):
         print(f"开始处理: {path}")
         dispose_zwhx(doc, template_doc)
     return file_name
@@ -306,7 +306,7 @@ def check_required_files(dir_path):
         'askrg': askrg, 
         'jlzp': jlzp,
         'zzzp': zzzp,
-        'zwhx': zwhx
+        'shzc': shzc
     }
     
     # 获取目录下所有docx文件
